@@ -7,37 +7,49 @@ load_dotenv()
 
 app = Flask(__name__)
 
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
+# Configure Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+model = genai.GenerativeModel("gemini-pro")
+
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
 @app.route("/chat", methods=["POST"])
 def chat():
+
     try:
         user_message = request.json["message"]
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=f"""
-            You are an AI marketing assistant for small businesses.
+        prompt = f"""
+        You are an AI marketing assistant for small businesses.
 
-            User request:
-            {user_message}
-            """
-        )
+        Help users with:
+        - Instagram captions
+        - Promotional offers
+        - Marketing ideas
+        - Customer engagement ideas
+
+        User request:
+        {user_message}
+        """
+
+        response = model.generate_content(prompt)
 
         return jsonify({
             "reply": response.text
         })
 
     except Exception as e:
+
         return jsonify({
-            "reply": str(e)
+            "reply": f"Error: {str(e)}"
         })
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
